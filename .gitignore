@@ -1,0 +1,43 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# Environments / secrets
+.env
+.env.*
+!.env.template
+
+# Django
+*.log
+db.sqlite3
+db.sqlite3-journal
+local_settings.py
+
+# Media (uploaded + generated HLS files)
+media/
+
+# Redis
+*.rdb
+*.aof
+*.pid
+
+# Coverage / tests
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+coverage.xml
+
+# VS Code
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
