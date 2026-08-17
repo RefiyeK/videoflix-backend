@@ -4,6 +4,8 @@ from django.core.mail import send_mail
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.conf import settings
+from django.utils.http import urlsafe_base64_decode
+from django.utils.encoding import force_str
 
 User = get_user_model()
 
@@ -36,3 +38,11 @@ def send_activation_email(user_id):
         [user.email],
         fail_silently=False,
     )
+
+def get_user_from_uidb64(uidb64):
+    """Decode a base64-encoded uid and return the matching user, or None."""
+    try:
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        return User.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        return None
