@@ -1,6 +1,17 @@
 asgiref==3.12.1
+click==8.4.2
+colorama==0.4.6
+croniter==6.2.4
 Django==5.2.17
+django-rq==4.1.1
 djangorestframework==3.18.0
+gunicorn==26.0.0
+packaging==26.3
+psycopg2-binary==2.9.12
+python-dateutil==2.9.0.post0
 python-dotenv==1.2.3
+redis==8.1.0
+rq==2.10.0
+six==1.17.0
 sqlparse==0.6.0
 tzdata==2026.3
