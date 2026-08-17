@@ -3,7 +3,9 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.contrib.auth.tokens import default_token_generator
-from authentication_app.utils import send_activation_email, get_user_from_uidb64
+from authentication_app.utils import send_activation_email, get_user_from_uidb64, set_jwt_cookies
+from django.contrib.auth import authenticate
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from .serializers import RegistrationSerializer
 
@@ -45,3 +47,27 @@ class ActivateView(APIView):
             {"error": "Activation failed."},
             status=status.HTTP_400_BAD_REQUEST,
         )
+
+
+class LoginView(APIView):
+    """Authenticate a user and set JWT tokens as HttpOnly cookies."""
+
+    def post(self, request):
+        email = request.data.get('email')
+        password = request.data.get('password')
+        user = authenticate(request, username=email, password=password)
+        if user is None:
+            return Response(
+                {'detail': 'Invalid credentials.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        refresh = RefreshToken.for_user(user)
+        response = Response(
+            {
+                'detail': 'Login successful',
+                'user': {'id': user.id, 'username': user.email},
+            },
+            status=status.HTTP_200_OK,
+        )
+        set_jwt_cookies(response, refresh.access_token, refresh)
+        return response

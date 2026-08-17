@@ -39,6 +39,7 @@ def send_activation_email(user_id):
         fail_silently=False,
     )
 
+
 def get_user_from_uidb64(uidb64):
     """Decode a base64-encoded uid and return the matching user, or None."""
     try:
@@ -46,3 +47,21 @@ def get_user_from_uidb64(uidb64):
         return User.objects.get(pk=uid)
     except (TypeError, ValueError, OverflowError, User.DoesNotExist):
         return None
+
+
+def set_jwt_cookies(response, access_token, refresh_token):
+    """Attach access and refresh JWT tokens as HttpOnly cookies to a response."""
+    response.set_cookie(
+        key=settings.SIMPLE_JWT['AUTH_COOKIE'],
+        value=str(access_token),
+        httponly=settings.SIMPLE_JWT['AUTH_COOKIE_HTTP_ONLY'],
+        samesite=settings.SIMPLE_JWT['AUTH_COOKIE_SAMESITE'],
+        secure=settings.SIMPLE_JWT['AUTH_COOKIE_SECURE'],
+    )
+    response.set_cookie(
+        key=settings.SIMPLE_JWT['AUTH_COOKIE_REFRESH'],
+        value=str(refresh_token),
+        httponly=settings.SIMPLE_JWT['AUTH_COOKIE_HTTP_ONLY'],
+        samesite=settings.SIMPLE_JWT['AUTH_COOKIE_SAMESITE'],
+        secure=settings.SIMPLE_JWT['AUTH_COOKIE_SECURE'],
+    )
