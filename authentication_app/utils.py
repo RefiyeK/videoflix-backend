@@ -65,3 +65,14 @@ def set_jwt_cookies(response, access_token, refresh_token):
         samesite=settings.SIMPLE_JWT['AUTH_COOKIE_SAMESITE'],
         secure=settings.SIMPLE_JWT['AUTH_COOKIE_SECURE'],
     )
+
+
+def set_access_cookie(response, access_token):
+    """Set only the access token cookie (used when refreshing)."""
+    response.set_cookie(
+        key=settings.SIMPLE_JWT['AUTH_COOKIE'],
+        value=str(access_token),
+        httponly=settings.SIMPLE_JWT['AUTH_COOKIE_HTTP_ONLY'],
+        samesite=settings.SIMPLE_JWT['AUTH_COOKIE_SAMESITE'],
+        secure=settings.SIMPLE_JWT['AUTH_COOKIE_SECURE'],
+    )
