@@ -2,6 +2,7 @@ import django_rq
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.permissions import AllowAny
 from django.contrib.auth.tokens import default_token_generator
 from authentication_app.utils import send_activation_email, get_user_from_uidb64, set_jwt_cookies, set_access_cookie
 from django.contrib.auth import authenticate
@@ -14,6 +15,8 @@ from .serializers import RegistrationSerializer
 
 class RegisterView(APIView):
     """Register a new (inactive) user and queue the activation email."""
+    authentication_classes = []
+    permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = RegistrationSerializer(data=request.data)
@@ -36,6 +39,9 @@ class RegisterView(APIView):
 class ActivateView(APIView):
     """Activate a user account using the emailed uid and token."""
 
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
     def get(self, request, uidb64, token):
         user = get_user_from_uidb64(uidb64)
         if user is not None and default_token_generator.check_token(user, token):
@@ -53,6 +59,9 @@ class ActivateView(APIView):
 
 class LoginView(APIView):
     """Authenticate a user and set JWT tokens as HttpOnly cookies."""
+
+    authentication_classes = []
+    permission_classes = [AllowAny]
 
     def post(self, request):
         email = request.data.get('email')
@@ -77,6 +86,9 @@ class LoginView(APIView):
 
 class LogoutView(APIView):
     """Blacklist the refresh token and delete the auth cookies."""
+
+    authentication_classes = []
+    permission_classes = [AllowAny]
 
     def post(self, request):
         refresh_token = request.COOKIES.get(
@@ -104,6 +116,9 @@ class LogoutView(APIView):
 
 class CookieTokenRefreshView(APIView):
     """Issue a new access token from the refresh cookie."""
+
+    authentication_classes = []
+    permission_classes = [AllowAny]
 
     def post(self, request):
         refresh_token = request.COOKIES.get(

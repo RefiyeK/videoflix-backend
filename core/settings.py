@@ -43,14 +43,17 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt.token_blacklist',
+    'corsheaders',
     'django_rq',
     'authentication_app',
 ]
 
 AUTH_USER_MODEL = 'authentication_app.User'
 
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -144,6 +147,13 @@ EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.getenv(
     'DEFAULT_FROM_EMAIL', 'Videoflix <noreply@videoflix.com>')
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://127.0.0.1:5500')
+
+# CORS: allow the Live Server frontend to talk to the backend with cookies
+CORS_ALLOWED_ORIGINS = [
+    FRONTEND_URL,
+    'http://localhost:5500',
+]
+CORS_ALLOW_CREDENTIALS = True
 
 # Django-RQ: background task queue (Redis DB 0)
 RQ_QUEUES = {
