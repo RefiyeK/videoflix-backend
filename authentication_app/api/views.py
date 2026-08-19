@@ -4,13 +4,25 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from django.contrib.auth.tokens import default_token_generator
-from authentication_app.utils import send_activation_email, get_user_from_uidb64, set_jwt_cookies, set_access_cookie
+from authentication_app.utils import (
+    send_activation_email,
+    get_user_from_uidb64,
+    set_jwt_cookies,
+    set_access_cookie,
+    queue_password_reset_email,
+    get_user_for_reset,
+    set_new_password,
+)
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.conf import settings
 from rest_framework_simplejwt.exceptions import TokenError
 
-from .serializers import RegistrationSerializer
+from .serializers import (
+    RegistrationSerializer,
+    PasswordResetSerializer,
+    PasswordConfirmSerializer,
+)
 
 
 class RegisterView(APIView):
@@ -44,7 +56,8 @@ class ActivateView(APIView):
 
     def get(self, request, uidb64, token):
         user = get_user_from_uidb64(uidb64)
-        if user is not None and default_token_generator.check_token(user, token):
+        token_valid = default_token_generator.check_token(user, token)
+        if user is not None and token_valid:
             user.is_active = True
             user.save()
             return Response(
@@ -143,3 +156,41 @@ class CookieTokenRefreshView(APIView):
         )
         set_access_cookie(response, access)
         return response
+
+
+class PasswordResetView(APIView):
+    """Send a reset email without revealing whether the account exists."""
+
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = PasswordResetSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        queue_password_reset_email(serializer.validated_data['email'])
+        return Response(
+            {'detail': 'An email has been sent to reset your password.'},
+            status=status.HTTP_200_OK,
+        )
+
+
+class PasswordConfirmView(APIView):
+    """Set a new password using the uid and token from the reset email."""
+
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def post(self, request, uidb64, token):
+        serializer = PasswordConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = get_user_for_reset(uidb64, token)
+        if user is None:
+            return Response(
+                {'detail': 'Invalid or expired reset link.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        set_new_password(user, serializer.validated_data['new_password'])
+        return Response(
+            {'detail': 'Your Password has been successfully reset.'},
+            status=status.HTTP_200_OK,
+        )

@@ -33,3 +33,24 @@ class RegistrationSerializer(serializers.ModelSerializer):
             is_active=False,
         )
         return user
+
+
+class PasswordResetSerializer(serializers.Serializer):
+    """Validate the email address submitted for a password reset."""
+
+    email = serializers.EmailField()
+
+
+class PasswordConfirmSerializer(serializers.Serializer):
+    """Validate the new password and its confirmation."""
+
+    new_password = serializers.CharField(write_only=True, min_length=8)
+    confirm_password = serializers.CharField(write_only=True)
+
+    def validate(self, data):
+        """Ensure the new password and its confirmation match."""
+        if data['new_password'] != data['confirm_password']:
+            raise serializers.ValidationError(
+                {'new_password': 'Passwords do not match.'}
+            )
+        return data

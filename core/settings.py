@@ -175,6 +175,10 @@ CACHES = {
 }
 
 
+# Password reset / activation links expire after 24 hours (in seconds).
+PASSWORD_RESET_TIMEOUT = 86400
+
+
 # Simple JWT configuration
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
