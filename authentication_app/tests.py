@@ -186,3 +186,74 @@ class TokenRefreshTests(APITestCase):
         self.client.cookies['refresh_token'] = 'not-a-real-token'
         response = self.client.post(self.url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class PasswordResetTests(APITestCase):
+    """Cover /api/password_reset/ and its enumeration safeguard."""
+
+    def setUp(self):
+        """Create one active user and store the reset URL."""
+        self.url = reverse('password_reset')
+        self.user = User.objects.create_user(
+            email='active@example.com', password='testpass123')
+
+    def test_reset_existing_user_returns_200(self):
+        """A registered email returns 200."""
+        response = self.client.post(self.url, {'email': 'active@example.com'})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_reset_unknown_email_returns_200(self):
+        """An unknown email returns the same 200 (no enumeration)."""
+        response = self.client.post(self.url, {'email': 'ghost@example.com'})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_reset_inactive_user_returns_200(self):
+        """An inactive user's email also returns 200 (no enumeration)."""
+        User.objects.create_user(
+            email='pending@example.com', password='testpass123',
+            is_active=False)
+        response = self.client.post(self.url, {'email': 'pending@example.com'})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+class PasswordConfirmTests(APITestCase):
+    """Cover /api/password_confirm/<uidb64>/<token>/."""
+
+    def setUp(self):
+        """Create one active user whose password will be reset."""
+        self.user = User.objects.create_user(
+            email='active@example.com', password='oldpass123')
+
+    def _build_url(self, user, token):
+        """Build the confirm URL for a given user and token."""
+        uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
+        return reverse(
+            'password_confirm', kwargs={'uidb64': uidb64, 'token': token})
+
+    def test_confirm_success_changes_password(self):
+        """A valid uid and token set the new password and return 200."""
+        token = default_token_generator.make_token(self.user)
+        payload = {'new_password': 'newpass123',
+                   'confirm_password': 'newpass123'}
+        response = self.client.post(self._build_url(self.user, token), payload)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password('newpass123'))
+
+    def test_confirm_invalid_token_fails(self):
+        """A wrong token returns 400 and leaves the old password intact."""
+        payload = {'new_password': 'newpass123',
+                   'confirm_password': 'newpass123'}
+        response = self.client.post(
+            self._build_url(self.user, 'wrong-token'), payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password('oldpass123'))
+
+    def test_confirm_password_mismatch_fails(self):
+        """Mismatched passwords return 400."""
+        token = default_token_generator.make_token(self.user)
+        payload = {'new_password': 'newpass123',
+                   'confirm_password': 'different123'}
+        response = self.client.post(self._build_url(self.user, token), payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
