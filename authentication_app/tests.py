@@ -5,6 +5,7 @@ from django.utils.encoding import force_bytes
 from django.contrib.auth.tokens import default_token_generator
 from rest_framework import status
 from rest_framework.test import APITestCase
+from rest_framework_simplejwt.tokens import RefreshToken
 
 User = get_user_model()
 
@@ -155,3 +156,33 @@ class LogoutTests(APITestCase):
         response = self.client.post(self.logout_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('detail', response.data)
+
+
+class TokenRefreshTests(APITestCase):
+    """Cover the /api/token/refresh/ endpoint and its cookie handling."""
+
+    def setUp(self):
+        """Create one active user and store the refresh URL."""
+        self.url = reverse('token_refresh')
+        self.user = User.objects.create_user(
+            email='active@example.com', password='testpass123')
+
+    def test_refresh_success_sets_new_access_cookie(self):
+        """A valid refresh cookie yields 200 and a new access cookie."""
+        refresh = RefreshToken.for_user(self.user)
+        self.client.cookies['refresh_token'] = str(refresh)
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('access', response.data)
+        self.assertIn('access_token', response.cookies)
+
+    def test_refresh_without_cookie_fails(self):
+        """A missing refresh cookie returns 400."""
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_refresh_invalid_token_fails(self):
+        """A malformed refresh token returns 401."""
+        self.client.cookies['refresh_token'] = 'not-a-real-token'
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
