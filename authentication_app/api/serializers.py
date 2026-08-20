@@ -3,6 +3,8 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
+GENERIC_REGISTRATION_ERROR = 'Please check your entries and try again.'
+
 
 class RegistrationSerializer(serializers.ModelSerializer):
     """Validate registration data and create an inactive user."""
@@ -14,14 +16,21 @@ class RegistrationSerializer(serializers.ModelSerializer):
         fields = ('id', 'email', 'password', 'confirmed_password')
         extra_kwargs = {
             'password': {'write_only': True},
+            # DRF auto-adds a UniqueValidator for the unique email
+            # field; its message would reveal which addresses are
+            # registered, turning this endpoint into an enumeration
+            # oracle. Existence is checked silently in validate().
+            'email': {'validators': []},
         }
 
     def validate(self, data):
-        """Ensure the password and its confirmation match."""
-        if data['password'] != data['confirmed_password']:
-            raise serializers.ValidationError(
-                {'password': 'Passwords do not match.'}
-            )
+        """Reject taken emails and mismatches with one shared message."""
+        passwords_match = data['password'] == data['confirmed_password']
+        email_is_free = not User.objects.filter(
+            email__iexact=data['email']
+        ).exists()
+        if not (passwords_match and email_is_free):
+            raise serializers.ValidationError(GENERIC_REGISTRATION_ERROR)
         return data
 
     def create(self, validated_data):
