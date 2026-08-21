@@ -3,9 +3,11 @@ from django.urls import reverse
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.contrib.auth.tokens import default_token_generator
+from django.core import mail
 from rest_framework import status
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
+from authentication_app.authentication import CookieJWTAuthentication
 
 User = get_user_model()
 
@@ -257,3 +259,82 @@ class PasswordConfirmTests(APITestCase):
                    'confirm_password': 'different123'}
         response = self.client.post(self._build_url(self.user, token), payload)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class UserModelTests(APITestCase):
+    """Cover the custom User model and its manager."""
+
+    def test_str_returns_email(self):
+        """The string representation of a user is its email."""
+        user = User.objects.create_user(
+            email='who@example.com', password='testpass123')
+        self.assertEqual(str(user), 'who@example.com')
+
+    def test_create_user_without_email_raises(self):
+        """Creating a user without an email raises ValueError."""
+        with self.assertRaises(ValueError):
+            User.objects.create_user(email='', password='testpass123')
+
+    def test_create_superuser_sets_flags(self):
+        """A superuser has is_staff, is_superuser and is_active set."""
+        admin = User.objects.create_superuser(
+            email='admin@example.com', password='testpass123')
+        self.assertTrue(admin.is_staff)
+        self.assertTrue(admin.is_superuser)
+        self.assertTrue(admin.is_active)
+
+
+class CookieJWTAuthenticationTests(APITestCase):
+    """Cover the cookie-based JWT authentication class directly."""
+
+    def setUp(self):
+        """Create one active user for token generation."""
+        self.user = User.objects.create_user(
+            email='active@example.com', password='testpass123')
+
+    def test_no_cookie_returns_none(self):
+        """A request without the access cookie is not authenticated."""
+        request = self.client.request().wsgi_request
+        result = CookieJWTAuthentication().authenticate(request)
+        self.assertIsNone(result)
+
+    def test_valid_cookie_authenticates_user(self):
+        """A valid access cookie authenticates the matching user."""
+        access = RefreshToken.for_user(self.user).access_token
+        self.client.cookies['access_token'] = str(access)
+        request = self.client.get('/').wsgi_request
+        user, _ = CookieJWTAuthentication().authenticate(request)
+        self.assertEqual(user, self.user)
+
+
+class LogoutEdgeCaseTests(APITestCase):
+    """Cover the logout path when the refresh token is already invalid."""
+
+    def test_logout_with_invalid_refresh_still_succeeds(self):
+        """An invalid refresh cookie is ignored and logout returns 200."""
+        self.client.cookies['refresh_token'] = 'not-a-real-token'
+        response = self.client.post(reverse('logout'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+class ActivationEmailTests(APITestCase):
+    """Cover the utils that build and send the activation email."""
+
+    def test_send_activation_email_fills_outbox(self):
+        """Sending the activation email places one message in the outbox."""
+        from authentication_app.utils import send_activation_email
+        user = User.objects.create_user(
+            email='pending@example.com', password='testpass123',
+            is_active=False)
+        send_activation_email(user.id)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn('pending@example.com', mail.outbox[0].to)
+
+    def test_send_password_reset_email_fills_outbox(self):
+        """Sending the reset email places one message in the outbox."""
+        from authentication_app.utils import send_password_reset_email
+        user = User.objects.create_user(
+            email='active@example.com', password='testpass123')
+        send_password_reset_email(user.id)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn('active@example.com', mail.outbox[0].to)
