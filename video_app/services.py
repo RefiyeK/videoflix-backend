@@ -43,3 +43,17 @@ def convert_to_resolution(source_path, video_id, resolution):
     output_dir = build_output_dir(video_id, resolution)
     command = build_ffmpeg_command(source_path, output_dir, height)
     subprocess.run(command, check=True, capture_output=True)
+
+
+def get_playlist_path(video_id, resolution):
+    """Return the index.m3u8 path for a video/resolution, or None if missing."""
+    playlist = Path(settings.MEDIA_ROOT) / "video" / \
+        str(video_id) / resolution / "index.m3u8"
+    return playlist if playlist.exists() else None
+
+
+def get_segment_path(video_id, resolution, segment):
+    """Return the .ts segment path for a video/resolution, or None if missing."""
+    segment_file = Path(settings.MEDIA_ROOT) / "video" / \
+        str(video_id) / resolution / segment
+    return segment_file if segment_file.exists() else None
