@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'django_rq',
     'authentication_app',
+    'video_app',
 ]
 
 AUTH_USER_MODEL = 'authentication_app.User'

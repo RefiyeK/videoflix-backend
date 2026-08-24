@@ -20,3 +20,4 @@ sqlparse==0.6.0
 tzdata==2026.3
 flake8==7.1.1
 coverage==7.6.10
+Pillow==11.0.0
