@@ -21,19 +21,22 @@ def build_activation_link(user):
     )
 
 
-def send_activation_email(user_id):
-    """Send the account activation email. Runs inside an RQ worker."""
-    user = User.objects.get(pk=user_id)
-    activation_link = build_activation_link(user)
-    subject = "Confirm your email"
-    message = (
+def build_activation_message(activation_link):
+    """Compose the plain text body of the account activation email."""
+    return (
         "Thank you for registering with Videoflix.\n\n"
         "Please activate your account by clicking the link below:\n"
         f"{activation_link}\n\n"
         "If you did not create an account, please ignore this email."
     )
+
+
+def send_activation_email(user_id):
+    """Send the account activation email. Runs inside an RQ worker."""
+    user = User.objects.get(pk=user_id)
+    message = build_activation_message(build_activation_link(user))
     send_mail(
-        subject,
+        "Confirm your email",
         message,
         settings.DEFAULT_FROM_EMAIL,
         [user.email],
