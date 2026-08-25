@@ -2,7 +2,8 @@
 
 A Django REST Framework backend for a video streaming platform. It handles user
 registration with email activation, JWT authentication via HttpOnly cookies,
-password reset by email, and video streaming over HLS. Uploaded videos are
+password reset by email, and video streaming over HLS. Account activation and
+password reset are sent as branded, responsive HTML emails. Uploaded videos are
 converted to HLS (480p / 720p / 1080p) in the background using FFMPEG and a
 Redis-backed task queue.
 
@@ -17,6 +18,7 @@ Akademie and is run separately (see [Running the frontend](#running-the-frontend
 - **Django-RQ** (background task queue)
 - **FFMPEG** (HLS video conversion)
 - **SimpleJWT** with HttpOnly cookies (authentication)
+- **SMTP email** with responsive HTML templates (activation and password reset)
 - **Docker** + **Docker Compose** (the whole stack runs in containers)
 
 ## Requirements
