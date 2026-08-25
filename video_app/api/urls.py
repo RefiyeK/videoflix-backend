@@ -10,7 +10,8 @@ urlpatterns = [
         name="video-playlist",
     ),
     re_path(
-        r"^video/(?P<movie_id>\d+)/(?P<resolution>[^/]+)/(?P<segment>[\w-]+\.ts)$",
+        r"^video/(?P<movie_id>\d+)/(?P<resolution>[^/]+)/"
+        r"(?P<segment>[\w-]+\.ts)$",
         HLSSegmentView.as_view(),
         name="video-segment",
     ),

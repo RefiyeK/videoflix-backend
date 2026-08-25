@@ -46,14 +46,14 @@ def convert_to_resolution(source_path, video_id, resolution):
 
 
 def get_playlist_path(video_id, resolution):
-    """Return the index.m3u8 path for a video/resolution, or None if missing."""
+    """Return the index.m3u8 path, or None if it does not exist."""
     playlist = Path(settings.MEDIA_ROOT) / "video" / \
         str(video_id) / resolution / "index.m3u8"
     return playlist if playlist.exists() else None
 
 
 def get_segment_path(video_id, resolution, segment):
-    """Return the .ts segment path for a video/resolution, or None if missing."""
+    """Return the .ts segment path, or None if it does not exist."""
     segment_file = Path(settings.MEDIA_ROOT) / "video" / \
         str(video_id) / resolution / segment
     return segment_file if segment_file.exists() else None

@@ -4,7 +4,7 @@ from video_app.models import Video
 
 
 class VideoListSerializer(serializers.ModelSerializer):
-    """Serialize a video for the dashboard list, exposing an absolute thumbnail URL."""
+    """Serialize a video for the list with an absolute thumbnail URL."""
 
     thumbnail_url = serializers.SerializerMethodField()
 
@@ -20,6 +20,6 @@ class VideoListSerializer(serializers.ModelSerializer):
         ]
 
     def get_thumbnail_url(self, obj):
-        """Return the fully qualified URL so the frontend can load the image directly."""
+        """Return the absolute URL so the frontend can load the image."""
         request = self.context.get("request")
         return request.build_absolute_uri(obj.thumbnail.url)

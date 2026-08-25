@@ -11,7 +11,7 @@ from .serializers import VideoListSerializer
 
 
 class VideoListView(ListAPIView):
-    """Return all available videos, newest first, for authenticated users only."""
+    """List available videos, newest first, for authenticated users."""
 
     queryset = Video.objects.all()
     serializer_class = VideoListSerializer
@@ -20,7 +20,7 @@ class VideoListView(ListAPIView):
 
 
 class HLSPlaylistView(APIView):
-    """Serve the HLS master playlist (index.m3u8) for a video and resolution."""
+    """Serve the HLS master playlist for a video and resolution."""
 
     authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -47,4 +47,6 @@ class HLSSegmentView(APIView):
         segment_path = get_segment_path(movie_id, resolution, segment)
         if segment_path is None:
             raise Http404("Segment not found.")
-        return FileResponse(open(segment_path, "rb"), content_type="video/MP2T")
+        return FileResponse(
+            open(segment_path, "rb"), content_type="video/MP2T"
+        )
