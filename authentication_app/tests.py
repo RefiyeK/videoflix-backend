@@ -329,6 +329,8 @@ class ActivationEmailTests(APITestCase):
         send_activation_email(user.id)
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn('pending@example.com', mail.outbox[0].to)
+        html = mail.outbox[0].alternatives[0][0]
+        self.assertIn('activate.html', html)
 
     def test_send_password_reset_email_fills_outbox(self):
         """Sending the reset email places one message in the outbox."""
@@ -338,3 +340,5 @@ class ActivationEmailTests(APITestCase):
         send_password_reset_email(user.id)
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn('active@example.com', mail.outbox[0].to)
+        html = mail.outbox[0].alternatives[0][0]
+        self.assertIn('confirm_password.html', html)

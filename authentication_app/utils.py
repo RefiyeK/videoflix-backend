@@ -1,14 +1,29 @@
 import django_rq
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
-from django.core.mail import send_mail
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.conf import settings
 from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
 
+from authentication_app.email_assets import VIDEOFLIX_LOGO_BASE64
+
 User = get_user_model()
+
+
+def send_html_email(subject, to_email, text_body, html_body):
+    """Send a multipart email with a plain text and an HTML alternative."""
+    message = EmailMultiAlternatives(
+        subject,
+        text_body,
+        settings.DEFAULT_FROM_EMAIL,
+        [to_email],
+    )
+    message.attach_alternative(html_body, "text/html")
+    message.send(fail_silently=False)
 
 
 def build_activation_link(user):
@@ -34,13 +49,16 @@ def build_activation_message(activation_link):
 def send_activation_email(user_id):
     """Send the account activation email. Runs inside an RQ worker."""
     user = User.objects.get(pk=user_id)
-    message = build_activation_message(build_activation_link(user))
-    send_mail(
+    link = build_activation_link(user)
+    html_body = render_to_string(
+        "emails/activation.html",
+        {"activation_link": link, "logo": VIDEOFLIX_LOGO_BASE64},
+    )
+    send_html_email(
         "Confirm your email",
-        message,
-        settings.DEFAULT_FROM_EMAIL,
-        [user.email],
-        fail_silently=False,
+        user.email,
+        build_activation_message(link),
+        html_body,
     )
 
 
@@ -106,13 +124,16 @@ def build_password_reset_message(reset_link):
 def send_password_reset_email(user_id):
     """Send the password reset email. Runs inside an RQ worker."""
     user = User.objects.get(pk=user_id)
-    message = build_password_reset_message(build_password_reset_link(user))
-    send_mail(
+    link = build_password_reset_link(user)
+    html_body = render_to_string(
+        "emails/password_reset.html",
+        {"reset_link": link, "logo": VIDEOFLIX_LOGO_BASE64},
+    )
+    send_html_email(
         "Reset your Password",
-        message,
-        settings.DEFAULT_FROM_EMAIL,
-        [user.email],
-        fail_silently=False,
+        user.email,
+        build_password_reset_message(link),
+        html_body,
     )
 
 
