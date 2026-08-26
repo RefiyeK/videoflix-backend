@@ -69,6 +69,8 @@ Then open `.env` and set the values. The variables are:
 | `EMAIL_HOST_PASSWORD` | SMTP password (see note below) | `abcd efgh ijkl mnop` |
 | `DEFAULT_FROM_EMAIL` | The "from" address on outgoing mail | `Videoflix <your-email@gmail.com>` |
 | `FRONTEND_URL` | Base URL of the running frontend | `http://127.0.0.1:5500` |
+| `DJANGO_SUPERUSER_EMAIL` | Email for the auto-created admin | `admin@videoflix.com` |
+| `DJANGO_SUPERUSER_PASSWORD` | Password for the auto-created admin | `your-admin-password` |
 
 > **`DB_HOST` and `REDIS_HOST` must be `db` and `redis`** (the Docker Compose
 > service names), not `localhost`. Inside the container, the database is reached
@@ -105,17 +107,12 @@ The API is now available at **http://127.0.0.1:8000/api/**.
 > On later starts you can drop `--build` and just run `docker compose up`. Use
 > `--build` again only after changing `requirements.txt` or the `Dockerfile`.
 
-### 4. Create an admin user
+### 4. Admin access
 
-To upload videos and access the Django admin, create a superuser. In a **second
-terminal** (leave `docker compose up` running in the first):
-
-```bash
-docker compose exec web python manage.py createsuperuser
-```
-
-Because this project uses an **email-based user model**, you log in with an email
-address instead of a username.
+A superuser is created automatically on container startup, using the
+`DJANGO_SUPERUSER_EMAIL` and `DJANGO_SUPERUSER_PASSWORD` values from your `.env`.
+Once the containers are running, log in to the Django admin at
+**http://127.0.0.1:8000/admin/** with those credentials.
 
 ### 5. Upload a video
 
